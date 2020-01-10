@@ -1,0 +1,1 @@
+D:\Python38\python.exe gui.py
