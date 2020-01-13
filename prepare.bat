@@ -1,1 +1,1 @@
-D:\Python38\Scripts\pip.exe install PyCRC pyserial
+D:\Python38\Scripts\pip.exe install PyCRC pyserial pyinstaller

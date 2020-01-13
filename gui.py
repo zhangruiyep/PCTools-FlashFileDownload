@@ -178,9 +178,9 @@ class Application(ttk.Frame):
 		progressFrame = ttk.Frame(self)
 		progressFrame.grid(row = 3, sticky=tk.NSEW, pady=3)
 		
-		self.pbar = ttk.Progressbar(progressFrame,orient ="horizontal",length = 500, mode ="determinate")
-		self.pbar.grid(padx=10, sticky=tk.NSEW)
-		self.pbar["maximum"] = 100
+		#self.pbar = ttk.Progressbar(progressFrame,orient ="horizontal",length = 500, mode ="determinate")
+		#self.pbar.grid(padx=10, sticky=tk.NSEW)
+		#self.pbar["maximum"] = 100
 
 		actionFrame = ttk.Frame(self)
 		actionFrame.grid(row = 4, sticky=tk.NSEW, pady=3)
@@ -188,8 +188,8 @@ class Application(ttk.Frame):
 		self.dloadBtn = ttk.Button(actionFrame, text="Download", command=self.dloadAll)
 		self.dloadBtn.grid(padx=10, row = 0, column = 0)
 
-		self.saveCfgFileBtn = ttk.Button(actionFrame, text="Save Configuration", command=self.saveCfgFile)
-		self.saveCfgFileBtn.grid(padx=10, row = 0, column = 1)		
+		#self.saveCfgFileBtn = ttk.Button(actionFrame, text="Save Configuration", command=self.saveCfgFile)
+		#self.saveCfgFileBtn.grid(padx=10, row = 0, column = 1)		
 
 	def show_context_menu(self, event):
 		self.context_menu.post(event.x_root,event.y_root)
@@ -244,9 +244,13 @@ class Application(ttk.Frame):
 		
 		with serial.Serial(comNum, 115200, timeout=1) as ser:
 			cmd = b'AT+IAPSRT=%x\r\n' % self.tv.filesdata[0][1]
-			#print(cmd)
+			print(cmd)
 			ser.write(cmd)
 			line = ser.readline().decode("utf-8")
+			getACK = "+ACK:" in line
+			while not getACK:
+				line = ser.readline().decode("utf-8")
+				getACK = "+ACK:" in line
 			print(line)
 			if "ERROR" in line:
 				tkinter.messagebox.showwarning("Warning", line)
@@ -258,7 +262,7 @@ class Application(ttk.Frame):
 			
 			with open(filename, "rb") as f:
 				content = f.read()
-				print(content)
+				#print(content)
 				
 				filecrc = CRCCCITT().calculate(content)
 				print(filecrc)
@@ -266,14 +270,20 @@ class Application(ttk.Frame):
 				f.close()
 			
 			cmd = b'AT+IAPSOH=%d,%d\r\n' % (filesize, filecrc)
+			print(cmd)
 			ser.write(cmd)
 			line = ser.readline().decode("utf-8")
+			getACK = "+ACK:" in line
+			while not getACK:
+				line = ser.readline().decode("utf-8")
+				getACK = "+ACK:" in line
 			print(line)
 			if "ERROR" in line:
 				tkinter.messagebox.showwarning("Warning", line)
 				return
 
 			i = 0
+			idx = 0
 			framesizeMax = 1024
 			while i < filesize:
 				
@@ -288,14 +298,20 @@ class Application(ttk.Frame):
 				for j in range(0,framesize):
 					frame += bytes([content[i+j]])
 				
-				print(frame)
+				#print(frame)
 				
 				# calculate frame crc
 				framecrc = CRCCCITT().calculate(frame)
 				
-				cmd = b'AT+IAPDWN=%d,%d,%d,%s\r\n' % (i, framesize, framecrc, frame.hex().encode("utf-8"))
+				cmd = b'AT+IAPDWN=%d,%d,%d,%s\r\n' % (idx, framesize, framecrc, frame.hex().encode("utf-8"))
+				#print(cmd)
+				print("downloading %d, %d, %d" % (idx, framesize, framecrc))
 				ser.write(cmd)
 				line = ser.readline().decode("utf-8")
+				getACK = "+ACK:" in line
+				while not getACK:
+					line = ser.readline().decode("utf-8")
+					getACK = "+ACK:" in line
 				print(line)
 				if "ERROR" in line:
 					tkinter.messagebox.showwarning("Warning", line)
@@ -303,16 +319,23 @@ class Application(ttk.Frame):
 				
 				# set index to next frame
 				i += framesizeMax
+				idx += 1
 				
 			cmd = b'AT+IAPEOT=1\r\n'
+			print(cmd)
 			ser.write(cmd)
 			line = ser.readline().decode("utf-8")
+			getACK = "+ACK:" in line
+			while not getACK:
+				line = ser.readline().decode("utf-8")
+				getACK = "+ACK:" in line
 			print(line)
 			if "ERROR" in line:
 				tkinter.messagebox.showwarning("Warning", line)
 				return
-			
+
 			ser.close()
+			tkinter.messagebox.showwarning("Warning", "Download Complete.")
 			
 		
 	def saveCfgFile(self):
