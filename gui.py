@@ -6,6 +6,7 @@ import tkinter.ttk as ttk
 import types
 import csvop
 import cfg
+import serial.tools.list_ports
 from filesData import *
 from mcuDevice import *
 
@@ -150,20 +151,23 @@ class Application(ttk.Frame):
 		self.Info = ttk.Label(serial_frame, text="COM :", justify=tk.LEFT)
 		self.Info.grid(row=0, sticky=tk.W, padx=10)
 
-		self.serialCOMEntry = ttk.Entry(serial_frame, width = 5)
-		self.serialCOMEntry.grid(row=0, column=1, padx=10)
-		if self.cfg:
-			try:
-				self.serialCOMEntry.delete(0, tk.END)
-				self.serialCOMEntry.insert(0, self.cfg.cp['Serial']['COM1'])
-			except:
-				print("can not get file name from cfg")
+		#self.serialCOMEntry = ttk.Entry(serial_frame, width = 5)
+		#self.serialCOMEntry.grid(row=0, column=1, padx=10)
+		#if self.cfg:
+		#	try:
+		#		self.serialCOMEntry.delete(0, tk.END)
+		#		self.serialCOMEntry.insert(0, self.cfg.cp['Serial']['COM1'])
+		#	except:
+		#		print("can not get file name from cfg")
+		
+		retryFrame = ttk.Frame(self)
+		retryFrame.grid(row = 1, sticky=tk.NSEW, pady = 3)
 
-		self.retryInfo = ttk.Label(serial_frame, text="Command retry times: ", justify=tk.LEFT)
-		self.retryInfo.grid(row=0, column=2, sticky=tk.W, padx=10)
+		self.retryInfo = ttk.Label(retryFrame, text="Command retry times: ", justify=tk.LEFT)
+		self.retryInfo.grid(row=0, column=0, sticky=tk.W, padx=10)
 
-		self.retryEntry = ttk.Entry(serial_frame, width = 5)
-		self.retryEntry.grid(row=0, column=3, padx=10)
+		self.retryEntry = ttk.Entry(retryFrame, width = 5)
+		self.retryEntry.grid(row=0, column=1, padx=10)
 
 		#self.getFileBtn = ttk.Button(serial_frame, text="Choose", command=self.chooseOutputFile, width=10)
 		#self.getFileBtn.grid(row=0, column=2, padx=10)
@@ -174,17 +178,21 @@ class Application(ttk.Frame):
 		#self.flashSizeInfo = ttk.Label(flashOptionFrame, text="Flash size(MB):", justify=tk.LEFT)
 		#self.flashSizeInfo.grid(row = 0, sticky=tk.W, padx=10)
 
-		#optionList = ["", "8", "4", "2", "1"]
-		#self.v = tk.StringVar()
-		#self.v.set(optionList[1])
+		optionList = ["", ]
+		for port in serial.tools.list_ports.comports():
+			print(port.description)
+			optionList.append(port.description)
+		
+		self.v = tk.StringVar()
+		self.v.set(optionList[1])
 		#if self.cfg:
 		#	try:
 		#		self.v.set(self.cfg.cp['OutFile']['Size'])
 		#	except:
 		#		print("can not get file size from cfg")
 
-		#self.platformOpt = ttk.OptionMenu(flashOptionFrame, self.v, *optionList)
-		#self.platformOpt.grid(row = 0, column=1, sticky=tk.W, padx=10)
+		self.platformOpt = ttk.OptionMenu(serial_frame, self.v, *optionList)
+		self.platformOpt.grid(row = 0, column=1, sticky=tk.W, padx=10)
 
 		progressFrame = ttk.Frame(self)
 		progressFrame.grid(row = 3, sticky=tk.NSEW, pady=3)
@@ -245,7 +253,13 @@ class Application(ttk.Frame):
 		self.entryPopup.destroy()
 
 	def dloadAll(self):
-		comNum = self.serialCOMEntry.get().strip()
+		option = self.v.get()
+		for port in serial.tools.list_ports.comports():
+			if (port.description == option):
+				comNum = port.device
+				break		
+		
+		#comNum = self.serialCOMEntry.get().strip()
 		if not comNum:
 			tkinter.messagebox.showwarning("Warning", "COM not set")
 			return
@@ -276,9 +290,9 @@ class Application(ttk.Frame):
 		print(cmd)
 		ret = self.dev.runCmd(cmd)
 		if (ret.result != "OK"):
-			print(ret.msg)
-			#tkinter.messagebox.showerror(ret.result, ret.msg)
-			#return False
+			#print(ret.msg)
+			tkinter.messagebox.showerror(ret.result, ret.msg)
+			return False
 
 		filename = os.path.realpath(filedata[0])
 		filesize = os.path.getsize(filename)
@@ -297,16 +311,16 @@ class Application(ttk.Frame):
 		print(cmd)
 		ret = self.dev.runCmd(cmd)
 		if (ret.result != "OK"):
-			print(ret.msg)
-			#tkinter.messagebox.showerror(ret.result, ret.msg)
-			#return False
+			#print(ret.msg)
+			tkinter.messagebox.showerror(ret.result, ret.msg)
+			return False
 
 		i = 0
 		idx = 0
 		framesizeMax = 1024
 		while i < filesize:
 			# process bar
-			self.updateProgress(float(i)/filesize)
+			#self.updateProgress(float(i)/filesize)
 			# get real frame size
 			if i + framesizeMax <= filesize:
 				framesize = framesizeMax
@@ -328,16 +342,16 @@ class Application(ttk.Frame):
 			print("downloading %d, %d, %d" % (idx, framesize, framecrc))
 			ret = self.dev.runCmd(cmd)
 			if (ret.result != "OK"):
-				print(ret.msg)
-				#tkinter.messagebox.showerror(ret.result, ret.msg)
-				#return False
+				#print(ret.msg)
+				tkinter.messagebox.showerror(ret.result, ret.msg)
+				return False
 
 			# set index to next frame
 			i += framesizeMax
 			idx += 1
 
 		# process bar
-		self.updateProgress(1)
+		#self.updateProgress(1)
 
 		cmd = b'AT+IAPEOT=1\r\n'
 		print(cmd)
@@ -364,9 +378,9 @@ class Application(ttk.Frame):
 
 		return
 
-	def updateProgress(self, value):
-		self.pbar["value"] = int(value * self.pbar["maximum"])
-		self.update_idletasks()
+	#def updateProgress(self, value):
+	#	self.pbar["value"] = int(value * self.pbar["maximum"])
+	#	self.update_idletasks()
 
 
 

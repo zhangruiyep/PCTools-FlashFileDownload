@@ -13,10 +13,8 @@ class mcuDevice():
 		self.retryCount = retry
 		
 	def open(self):
-		comName = 'COM' + self.comNum
-		
 		try:
-			self.ser = serial.Serial(comName, 115200, timeout=1)
+			self.ser = serial.Serial(self.comNum, 115200, timeout=1)
 		except:
 			ret = mcuDeviceRet("ERROR", "%s can not open." % comName)
 			return ret
@@ -31,33 +29,37 @@ class mcuDevice():
 		return ret
 
 	def runCmd(self, cmd):
-		cmdRetry = self.retryCount
+		cmdRetry = 0
 		ret = None
 		
-		while(cmdRetry > 0):
-			cmdRetry -= 1
+		while(cmdRetry <= self.retryCount):
+			if (cmdRetry != 0):
+				print("Retry: %d" % cmdRetry)
+				
 			self.ser.write(cmd)
 			
 			line = self.ser.readline().decode("utf-8")
 			getACK = "+ACK:" in line
-			rspRetry = self.retryCount
-			while (not getACK) and (rspRetry > 0):
+			rspRetry = 0
+			while (not getACK) and (rspRetry <= self.retryCount):
 				line = self.ser.readline().decode("utf-8")
 				getACK = "+ACK:" in line
-				rspRetry -= 1
+				rspRetry += 1
 			
-			if (rspRetry <= 0):
+			if (rspRetry > self.retryCount):
 				ret = mcuDeviceRet("Warning", "Can not get +ACK from device")
 				print(ret.msg)
+				cmdRetry += 1
 				continue
 				
 			print(line)
 			if "ERROR" in line:
 				ret = mcuDeviceRet("ERROR", line)
 				print(ret.msg)
+				cmdRetry += 1
 				continue
 	
 			ret = mcuDeviceRet("OK", "runCmd done.")
 			return ret
-		
+					
 		return ret
