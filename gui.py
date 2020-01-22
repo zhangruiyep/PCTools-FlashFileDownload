@@ -4,12 +4,16 @@ import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.ttk as ttk
 import types
+import serial.tools.list_ports
+import threading
+import time
+
 import csvop
 import cfg
-import serial.tools.list_ports
 from filesData import *
 from mcuDevice import *
 
+FLOW_DEBUG = True
 
 class AddFrame(ttk.Frame):
 	def __init__(self, master=None, parentIdx=""):
@@ -54,7 +58,7 @@ class AddFrame(ttk.Frame):
 
 			self.tv.update_filesdata()
 
-			if not self.tv.filesdata.idxValid(filename):
+			if not idxValid(filename):
 				self.destroy()
 				return
 
@@ -107,7 +111,7 @@ class filesTreeview(ttk.Treeview):
 	def update_filesdata(self):
 		self.filesdata.data = []
 		for i in self.get_children():
-			idx = self.filesdata.getIdxByName(self.item(i)["values"][0])
+			idx = getIdxByName(self.item(i)["values"][0])
 			if idx != -1:
 				self.filesdata.data.append([self.item(i)["values"][0], idx])
 		self.filesdata.data.sort(key=takeOffset)
@@ -270,29 +274,49 @@ class Application(ttk.Frame):
 			tkinter.messagebox.showwarning("Warning", "Retry times invalid")
 			return
 
+		self.thread = threading.Thread(target=self.dloadThread, name="Thread-dload", args=(comNum, retry), daemon=True)
+		self.thread.start()
+		#while(self.thread.is_alive()):
+		#	self.update_idletasks()
+		#	time.sleep(1)
+
+		#tkinter.messagebox.showinfo("Info", "Download Complete.")
+
+	def dloadThread(self, comNum, retry):
+		self.dloadBtn["state"] = "disabled"
 		self.dev = mcuDevice(comNum, retry)
 		ret = self.dev.open()
 		if (ret.result != "OK"):
-			tkinter.messagebox.showerror(ret.result, ret.msg)
+			#tkinter.messagebox.showerror(ret.result, ret.msg)
 			return
-
+			
 		for d in self.tv.filesdata.data:
 			if (self.dloadFile(d) == False):
 				self.dev.close()
+				tkinter.messagebox.showinfo("Info", "Download Not Complete.")
+				self.dloadBtn["state"] = "normal"
 				return
-
+		
 		self.dev.close()
 		tkinter.messagebox.showinfo("Info", "Download Complete.")
-
+		self.dloadBtn["state"] = "normal"
 
 	def dloadFile(self, filedata):
-		cmd = b'AT+IAPSRT=%x\r\n' % self.tv.filesdata.getIdxByName(filedata[0])
+		idx = getIdxByName(filedata[0])
+		if idx < 16:
+			c = b'%x' % idx
+		else:
+			c = b'%c' % (ord('a') + idx - 10)
+			
+		cmd = b'AT+IAPSRT=%c\r\n' % c
 		print(cmd)
 		ret = self.dev.runCmd(cmd)
 		if (ret.result != "OK"):
-			#print(ret.msg)
-			tkinter.messagebox.showerror(ret.result, ret.msg)
-			return False
+			if FLOW_DEBUG:
+				print(ret.msg)
+			else:
+				tkinter.messagebox.showerror(ret.result, ret.msg)
+				return False
 
 		filename = os.path.realpath(filedata[0])
 		filesize = os.path.getsize(filename)
@@ -311,9 +335,11 @@ class Application(ttk.Frame):
 		print(cmd)
 		ret = self.dev.runCmd(cmd)
 		if (ret.result != "OK"):
-			#print(ret.msg)
-			tkinter.messagebox.showerror(ret.result, ret.msg)
-			return False
+			if FLOW_DEBUG:
+				print(ret.msg)
+			else:
+				tkinter.messagebox.showerror(ret.result, ret.msg)
+				return False
 
 		i = 0
 		idx = 0
@@ -342,9 +368,11 @@ class Application(ttk.Frame):
 			print("downloading %d, %d, %d" % (idx, framesize, framecrc))
 			ret = self.dev.runCmd(cmd)
 			if (ret.result != "OK"):
-				#print(ret.msg)
-				tkinter.messagebox.showerror(ret.result, ret.msg)
-				return False
+				if FLOW_DEBUG:
+					print(ret.msg)
+				else:
+					tkinter.messagebox.showerror(ret.result, ret.msg)
+					return False
 
 			# set index to next frame
 			i += framesizeMax
@@ -357,8 +385,11 @@ class Application(ttk.Frame):
 		print(cmd)
 		ret = self.dev.runCmd(cmd)
 		if (ret.result != "OK"):
-			tkinter.messagebox.showerror(ret.result, ret.msg)
-			return False
+			if FLOW_DEBUG:
+				print(ret.msg)
+			else:
+				tkinter.messagebox.showerror(ret.result, ret.msg)
+				return False
 
 		return True
 
