@@ -188,7 +188,8 @@ class Application(ttk.Frame):
 			optionList.append(port.description)
 		
 		self.v = tk.StringVar()
-		self.v.set(optionList[1])
+		if len(optionList) > 1:
+			self.v.set(optionList[1])
 		#if self.cfg:
 		#	try:
 		#		self.v.set(self.cfg.cp['OutFile']['Size'])
