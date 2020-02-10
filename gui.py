@@ -13,7 +13,7 @@ import cfg
 from filesData import *
 from mcuDevice import *
 
-FLOW_DEBUG = True
+FLOW_DEBUG = False
 
 class AddFrame(ttk.Frame):
 	def __init__(self, master=None, parentIdx=""):
@@ -259,14 +259,14 @@ class Application(ttk.Frame):
 
 	def dloadAll(self):
 		option = self.v.get()
+		comNum = None
 		for port in serial.tools.list_ports.comports():
 			if (port.description == option):
 				comNum = port.device
 				break		
 		
-		#comNum = self.serialCOMEntry.get().strip()
-		if not comNum:
-			tkinter.messagebox.showwarning("Warning", "COM not set")
+		if comNum == None:
+			tkinter.messagebox.showerror("Error", "Device COM not set")
 			return
 
 		try:
