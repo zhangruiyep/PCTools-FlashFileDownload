@@ -16,7 +16,7 @@ class mcuDevice():
 		try:
 			self.ser = serial.Serial(self.comNum, 115200, timeout=1)
 		except:
-			ret = mcuDeviceRet("ERROR", "%s can not open." % comName)
+			ret = mcuDeviceRet("ERROR", "%s can not open." % self.comNum)
 			return ret
 		
 		ret = mcuDeviceRet("OK", "Open done.")

@@ -67,7 +67,7 @@ class AddFrame(ttk.Frame):
 				self.destroy()
 				return
 
-			self.tv.insert(self.parentIdx, "end", values=(filename,))
+			self.tv.insert(self.parentIdx, "end", values=(filename,"READY",))
 
 		self.tv.update_filesdata()
 
@@ -86,12 +86,12 @@ class AddFrame(ttk.Frame):
 				self.fileEntry.insert(tk.END, os.path.realpath(filename) + ",")
 
 def takeOffset(elem):
-	return elem[1]
+	return elem[FILEDATA_IDX]
 
 class filesTreeview(ttk.Treeview):
 	def __init__(self, master=None):
 		ttk.Treeview.__init__(self, master)
-		self['columns']=("filename")
+		self['columns']=("filename", "dload_st")
 		self.filesdata = filesData()
 		self.grid(sticky=tk.NSEW)
 		self.createWidgets()
@@ -99,21 +99,25 @@ class filesTreeview(ttk.Treeview):
 	def createWidgets(self):
 		self.column("#0", width=20, stretch=0)
 		self.column("filename", width=500)
+		self.column("dload_st", width=100)
 		self.heading('filename', text='File Name')
+		self.heading('dload_st', text='Status')
 
 	def fill_treeview(self):
 		for item in self.get_children():
 			self.delete(item)
 
 		for f in self.filesdata.data:
-			self.insert('',"end",values=(f[0],))
+			self.insert('',"end",values=(f[FILEDATA_NAME],f[FILEDATA_STATUS]))
 
 	def update_filesdata(self):
 		self.filesdata.data = []
 		for i in self.get_children():
 			idx = getIdxByName(self.item(i)["values"][0])
 			if idx != -1:
-				self.filesdata.data.append([self.item(i)["values"][0], idx])
+				#print(idx)
+				#print(self.item(i)["values"])
+				self.filesdata.data.append([self.item(i)["values"][0], idx, self.item(i)["values"][1]])
 		self.filesdata.data.sort(key=takeOffset)
 		self.fill_treeview()
 
@@ -172,6 +176,8 @@ class Application(ttk.Frame):
 
 		self.retryEntry = ttk.Entry(retryFrame, width = 5)
 		self.retryEntry.grid(row=0, column=1, padx=10)
+		self.retryEntry.delete(0, tk.END)
+		self.retryEntry.insert(tk.END, "1")
 
 		#self.getFileBtn = ttk.Button(serial_frame, text="Choose", command=self.chooseOutputFile, width=10)
 		#self.getFileBtn.grid(row=0, column=2, padx=10)
@@ -209,8 +215,11 @@ class Application(ttk.Frame):
 		actionFrame = ttk.Frame(self)
 		actionFrame.grid(row = 4, sticky=tk.NSEW, pady=3)
 
-		self.dloadBtn = ttk.Button(actionFrame, text="Download", command=self.dloadAll)
+		self.dloadBtn = ttk.Button(actionFrame, text="Download All", command=self.dloadAll)
 		self.dloadBtn.grid(padx=10, row = 0, column = 0)
+
+		self.dloadFailsBtn = ttk.Button(actionFrame, text="Download Fail Files", command=self.dloadFails)
+		self.dloadFailsBtn.grid(padx=10, row = 0, column = 1)
 
 		#self.saveCfgFileBtn = ttk.Button(actionFrame, text="Save Configuration", command=self.saveCfgFile)
 		#self.saveCfgFileBtn.grid(padx=10, row = 0, column = 1)
@@ -257,7 +266,7 @@ class Application(ttk.Frame):
 	def entryEntryDestroy(self, event):
 		self.entryPopup.destroy()
 
-	def dloadAll(self):
+	def dloadAllMode(self, mode):
 		option = self.v.get()
 		comNum = None
 		for port in serial.tools.list_ports.comports():
@@ -275,35 +284,50 @@ class Application(ttk.Frame):
 			tkinter.messagebox.showwarning("Warning", "Retry times invalid")
 			return
 
-		self.thread = threading.Thread(target=self.dloadThread, name="Thread-dload", args=(comNum, retry), daemon=True)
+		self.thread = threading.Thread(target=self.dloadThread, name="Thread-dload", args=(comNum, retry, mode), daemon=True)
 		self.thread.start()
 		#while(self.thread.is_alive()):
 		#	self.update_idletasks()
 		#	time.sleep(1)
 
 		#tkinter.messagebox.showinfo("Info", "Download Complete.")
+	def dloadAll(self):
+		self.dloadAllMode("ALL")
 
-	def dloadThread(self, comNum, retry):
+	def dloadFails(self):
+		self.dloadAllMode("FAIL_RETRY")
+
+	def dloadThread(self, comNum, retry, mode):
 		self.dloadBtn["state"] = "disabled"
+		self.dloadFailsBtn["state"] = "disabled"
 		self.dev = mcuDevice(comNum, retry)
 		ret = self.dev.open()
 		if (ret.result != "OK"):
 			#tkinter.messagebox.showerror(ret.result, ret.msg)
+			self.dloadBtn["state"] = "normal"
+			self.dloadFailsBtn["state"] = "normal"
 			return
 			
 		for d in self.tv.filesdata.data:
+			if (mode == "FAIL_RETRY") and (d[FILEDATA_STATUS] != "FAIL"):
+				continue
 			if (self.dloadFile(d) == False):
-				self.dev.close()
-				tkinter.messagebox.showinfo("Info", "Download Not Complete.")
-				self.dloadBtn["state"] = "normal"
-				return
+				#self.dev.close()
+				#tkinter.messagebox.showinfo("Info", "Download %s failed." % d[0])
+				#self.dloadBtn["state"] = "normal"
+				#return
+				d[FILEDATA_STATUS] = "FAIL"
+			else:
+				d[FILEDATA_STATUS] = "DONE"
+			self.tv.fill_treeview()
 		
 		self.dev.close()
 		tkinter.messagebox.showinfo("Info", "Download Complete.")
 		self.dloadBtn["state"] = "normal"
+		self.dloadFailsBtn["state"] = "normal"
 
 	def dloadFile(self, filedata):
-		idx = getIdxByName(filedata[0])
+		idx = getIdxByName(filedata[FILEDATA_NAME])
 		if idx < 16:
 			c = b'%x' % idx
 		else:
@@ -319,7 +343,7 @@ class Application(ttk.Frame):
 				tkinter.messagebox.showerror(ret.result, ret.msg)
 				return False
 
-		filename = os.path.realpath(filedata[0])
+		filename = os.path.realpath(filedata[FILEDATA_NAME])
 		filesize = os.path.getsize(filename)
 		#print(filesize)
 

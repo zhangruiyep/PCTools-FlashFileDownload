@@ -5,6 +5,10 @@ import tkinter.messagebox
 import csvop
 import cfg
 
+FILEDATA_NAME = 0
+FILEDATA_IDX = 1
+FILEDATA_STATUS = 2
+
 def getIdxByName(filename):
 	# get index by name
 	basename = os.path.basename(filename)
@@ -36,7 +40,7 @@ class filesData():
 	def isExist(self, filename):
 		idx = getIdxByName(filename)
 		for f in self.data:
-			if getIdxByName(f[0]) == idx:
+			if getIdxByName(f[FILEDATA_NAME]) == idx:
 				return True
 		return False
 	
