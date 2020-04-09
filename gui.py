@@ -307,7 +307,9 @@ class Application(ttk.Frame):
 			self.dloadBtn["state"] = "normal"
 			self.dloadFailsBtn["state"] = "normal"
 			return
-			
+		
+		dloadAllOK = True
+		
 		for d in self.tv.filesdata.data:
 			if (mode == "FAIL_RETRY") and (d[FILEDATA_STATUS] != "FAIL"):
 				continue
@@ -317,12 +319,17 @@ class Application(ttk.Frame):
 				#self.dloadBtn["state"] = "normal"
 				#return
 				d[FILEDATA_STATUS] = "FAIL"
+				dloadAllOK = False
 			else:
 				d[FILEDATA_STATUS] = "DONE"
 			self.tv.fill_treeview()
 		
 		self.dev.close()
-		tkinter.messagebox.showinfo("Info", "Download Complete.")
+		if (dloadAllOK):
+			tkinter.messagebox.showinfo("Info", "Download Complete.")
+		else:
+			tkinter.messagebox.showerror("Error", "Download Fail.")
+			
 		self.dloadBtn["state"] = "normal"
 		self.dloadFailsBtn["state"] = "normal"
 

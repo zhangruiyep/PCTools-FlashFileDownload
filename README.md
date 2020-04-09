@@ -2,6 +2,10 @@
  
 History:
 --------
+* 2020-04-10 V0.6
+
+	* Only show "complete" if all files download done.
+	
 
 * 2020-04-09 V0.5
 
