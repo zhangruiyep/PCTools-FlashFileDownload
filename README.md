@@ -3,6 +3,11 @@
 History:
 --------
 
+* 2020-04-09 V0.5
+
+	* Catch exception when serial read
+	
+
 * 2020-04-08 V0.4
 	
 	* Add default retry times

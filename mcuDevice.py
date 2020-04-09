@@ -38,12 +38,23 @@ class mcuDevice():
 				
 			self.ser.write(cmd)
 			
-			line = self.ser.readline().decode("utf-8")
-			getACK = "+ACK:" in line
+			try:
+				line = self.ser.readline().decode("utf-8")
+			except:
+				print("Serial data INVALID. Please check device serial.")
+				getACK = False
+			else:
+				getACK = "+ACK:" in line
+				
 			rspRetry = 0
 			while (not getACK) and (rspRetry <= self.retryCount):
-				line = self.ser.readline().decode("utf-8")
-				getACK = "+ACK:" in line
+				try:
+					line = self.ser.readline().decode("utf-8")
+				except:
+					print("Serial data INVALID. Please check device serial.")
+					getACK = False
+				else:
+					getACK = "+ACK:" in line
 				rspRetry += 1
 			
 			if (rspRetry > self.retryCount):
