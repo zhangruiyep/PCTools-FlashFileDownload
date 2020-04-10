@@ -12,8 +12,7 @@ import csvop
 import cfg
 from filesData import *
 from mcuDevice import *
-
-FLOW_DEBUG = False
+from dload import *
 
 class AddFrame(ttk.Frame):
 	def __init__(self, master=None, parentIdx=""):
@@ -313,7 +312,8 @@ class Application(ttk.Frame):
 		for d in self.tv.filesdata.data:
 			if (mode == "FAIL_RETRY") and (d[FILEDATA_STATUS] != "FAIL"):
 				continue
-			if (self.dloadFile(d) == False):
+			dl = dload(self.dev, d[FILEDATA_NAME]);
+			if (dl.dloadFile() == False):
 				#self.dev.close()
 				#tkinter.messagebox.showinfo("Info", "Download %s failed." % d[0])
 				#self.dloadBtn["state"] = "normal"
@@ -333,97 +333,6 @@ class Application(ttk.Frame):
 		self.dloadBtn["state"] = "normal"
 		self.dloadFailsBtn["state"] = "normal"
 
-	def dloadFile(self, filedata):
-		idx = getIdxByName(filedata[FILEDATA_NAME])
-		if idx < 16:
-			c = b'%x' % idx
-		else:
-			c = b'%c' % (ord('a') + idx - 10)
-			
-		cmd = b'AT+IAPSRT=%c\r\n' % c
-		print(cmd)
-		ret = self.dev.runCmd(cmd)
-		if (ret.result != "OK"):
-			if FLOW_DEBUG:
-				print(ret.msg)
-			else:
-				tkinter.messagebox.showerror(ret.result, ret.msg)
-				return False
-
-		filename = os.path.realpath(filedata[FILEDATA_NAME])
-		filesize = os.path.getsize(filename)
-		#print(filesize)
-
-		with open(filename, "rb") as f:
-			content = f.read()
-			#print(content)
-
-			filecrc = CRCCCITT().calculate(content)
-			#print(filecrc)
-
-			f.close()
-
-		cmd = b'AT+IAPSOH=%d,%d\r\n' % (filesize, filecrc)
-		print(cmd)
-		ret = self.dev.runCmd(cmd)
-		if (ret.result != "OK"):
-			if FLOW_DEBUG:
-				print(ret.msg)
-			else:
-				tkinter.messagebox.showerror(ret.result, ret.msg)
-				return False
-
-		i = 0
-		idx = 0
-		framesizeMax = 1024
-		while i < filesize:
-			# process bar
-			#self.updateProgress(float(i)/filesize)
-			# get real frame size
-			if i + framesizeMax <= filesize:
-				framesize = framesizeMax
-			else:
-				framesize = filesize - i
-
-			# get frame data
-			frame = b''
-			for j in range(0,framesize):
-				frame += bytes([content[i+j]])
-
-			#print(frame)
-
-			# calculate frame crc
-			framecrc = CRCCCITT().calculate(frame)
-
-			cmd = b'AT+IAPDWN=%d,%d,%d,%s\r\n' % (idx, framesize, framecrc, frame.hex().encode("utf-8"))
-			#print(cmd)
-			print("downloading %d, %d, %d" % (idx, framesize, framecrc))
-			ret = self.dev.runCmd(cmd)
-			if (ret.result != "OK"):
-				if FLOW_DEBUG:
-					print(ret.msg)
-				else:
-					tkinter.messagebox.showerror(ret.result, ret.msg)
-					return False
-
-			# set index to next frame
-			i += framesizeMax
-			idx += 1
-
-		# process bar
-		#self.updateProgress(1)
-
-		cmd = b'AT+IAPEOT=1\r\n'
-		print(cmd)
-		ret = self.dev.runCmd(cmd)
-		if (ret.result != "OK"):
-			if FLOW_DEBUG:
-				print(ret.msg)
-			else:
-				tkinter.messagebox.showerror(ret.result, ret.msg)
-				return False
-
-		return True
 
 
 	def saveCfgFile(self):

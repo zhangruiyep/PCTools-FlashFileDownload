@@ -2,6 +2,10 @@
  
 History:
 --------
+* 2020-04-10
+
+	* Restruct code. Move download file function out of gui.py.
+
 * 2020-04-10 V0.6
 
 	* Only show "complete" if all files download done.
