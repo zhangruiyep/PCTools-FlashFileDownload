@@ -207,9 +207,9 @@ class Application(ttk.Frame):
 		progressFrame = ttk.Frame(self)
 		progressFrame.grid(row = 3, sticky=tk.NSEW, pady=3)
 
-		#self.pbar = ttk.Progressbar(progressFrame,orient ="horizontal",length = 500, mode ="determinate")
-		#self.pbar.grid(padx=10, sticky=tk.NSEW)
-		#self.pbar["maximum"] = 100
+		self.pbar = ttk.Progressbar(progressFrame, orient ="horizontal", length = 600, mode ="determinate")
+		self.pbar.grid(padx=10, sticky=tk.NSEW)
+		self.pbar["maximum"] = 100
 
 		actionFrame = ttk.Frame(self)
 		actionFrame.grid(row = 4, sticky=tk.NSEW, pady=3)
@@ -308,6 +308,7 @@ class Application(ttk.Frame):
 			return
 		
 		dloadAllOK = True
+		doneCount = 0
 		
 		for d in self.tv.filesdata.data:
 			if (mode == "FAIL_RETRY") and (d[FILEDATA_STATUS] != "FAIL"):
@@ -323,6 +324,8 @@ class Application(ttk.Frame):
 			else:
 				d[FILEDATA_STATUS] = "DONE"
 			self.tv.fill_treeview()
+			doneCount += 1
+			self.updateProgress(1.0 * doneCount / len(self.tv.filesdata.data))
 		
 		self.dev.close()
 		if (dloadAllOK):
@@ -350,9 +353,9 @@ class Application(ttk.Frame):
 
 		return
 
-	#def updateProgress(self, value):
-	#	self.pbar["value"] = int(value * self.pbar["maximum"])
-	#	self.update_idletasks()
+	def updateProgress(self, value):
+		self.pbar["value"] = int(value * self.pbar["maximum"])
+		self.update_idletasks()
 
 
 

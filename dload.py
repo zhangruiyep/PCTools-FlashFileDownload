@@ -3,6 +3,7 @@ from filesData import *
 from mcuDevice import *
 
 FLOW_DEBUG = False
+#FLOW_DEBUG = True
 
 class dload():
 	def __init__(self, dev, filename):
