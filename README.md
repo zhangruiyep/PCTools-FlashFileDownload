@@ -3,7 +3,7 @@
 History:
 --------
 
-* 2020-04-15
+* 2020-04-15 V0.7
 
 	* Disable dialog box when file fail.
 	
