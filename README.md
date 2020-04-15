@@ -2,6 +2,14 @@
  
 History:
 --------
+
+* 2020-04-15
+
+	* Disable dialog box when file fail.
+	
+	* Refresh file state when click download all.
+	
+
 * 2020-04-10
 
 	* Restruct code. Move download file function out of gui.py.

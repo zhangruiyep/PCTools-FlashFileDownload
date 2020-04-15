@@ -302,11 +302,17 @@ class Application(ttk.Frame):
 		self.dev = mcuDevice(comNum, retry)
 		ret = self.dev.open()
 		if (ret.result != "OK"):
-			#tkinter.messagebox.showerror(ret.result, ret.msg)
+			tkinter.messagebox.showerror(ret.result, ret.msg)
 			self.dloadBtn["state"] = "normal"
 			self.dloadFailsBtn["state"] = "normal"
 			return
 		
+		# reset files state
+		if (mode == "ALL"):
+			for d in self.tv.filesdata.data:
+				d[FILEDATA_STATUS] = "READY"
+			self.tv.fill_treeview()
+			
 		dloadAllOK = True
 		doneCount = 0
 		

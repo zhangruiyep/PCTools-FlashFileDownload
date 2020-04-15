@@ -25,7 +25,7 @@ class dload():
 			if FLOW_DEBUG:
 				print(ret.msg)
 			else:
-				tkinter.messagebox.showerror(ret.result, ret.msg)
+				#tkinter.messagebox.showerror(ret.result, ret.msg)
 				return False
 		return True
 		
