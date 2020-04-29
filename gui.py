@@ -319,12 +319,17 @@ class Application(ttk.Frame):
 		for d in self.tv.filesdata.data:
 			if (mode == "FAIL_RETRY") and (d[FILEDATA_STATUS] != "FAIL"):
 				continue
+			dlretry = 0
 			dl = dload(self.dev, d[FILEDATA_NAME]);
-			if (dl.dloadFile() == False):
+			while (dl.dloadFile() == False):
 				#self.dev.close()
 				#tkinter.messagebox.showinfo("Info", "Download %s failed." % d[0])
 				#self.dloadBtn["state"] = "normal"
 				#return
+				dlretry += 1
+				if (dlretry > retry):
+					break;
+			if (dlretry > retry):
 				d[FILEDATA_STATUS] = "FAIL"
 				dloadAllOK = False
 			else:

@@ -3,6 +3,13 @@
 History:
 --------
 
+* 2020-04-24 V0.8
+
+	* Fix bug that first AT fail.
+	
+	* When download file fail, re-download from file start.
+	
+
 * 2020-04-15 V0.7
 
 	* Disable dialog box when file fail.

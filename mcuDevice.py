@@ -1,5 +1,5 @@
 import serial
-from PyCRC.CRCCCITT import CRCCCITT
+from pycrc.CRCCCITT import CRCCCITT
 
 class mcuDeviceRet():
 	def __init__(self, result, msg):
@@ -57,7 +57,7 @@ class mcuDevice():
 					getACK = "+ACK:" in line
 				rspRetry += 1
 			
-			if (rspRetry > self.retryCount):
+			if (not getACK) and (rspRetry > self.retryCount):
 				ret = mcuDeviceRet("Warning", "Can not get +ACK from device")
 				print(ret.msg)
 				cmdRetry += 1
