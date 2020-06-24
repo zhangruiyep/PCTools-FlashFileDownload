@@ -1,1 +1,1 @@
-D:\Python38\python.exe gui.py
+C:\Users\David\AppData\Local\Programs\Python\Python36-32\python.exe gui.py
