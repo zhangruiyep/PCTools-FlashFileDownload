@@ -1,5 +1,5 @@
 import serial
-from PyCRC.CRCCCITT import CRCCCITT
+from pycrc.CRCCCITT import CRCCCITT
 
 class mcuDeviceRet():
 	def __init__(self, result, msg):

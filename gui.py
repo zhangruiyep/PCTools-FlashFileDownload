@@ -371,7 +371,7 @@ class Application(ttk.Frame):
 
 
 app = Application()
-app.master.title('Flash File Download')
+app.master.title('Flash File Download V2.0')
 app.master.rowconfigure(0, weight=1)
 app.master.columnconfigure(0, weight=1)
 app.mainloop()
