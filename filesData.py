@@ -19,7 +19,8 @@ def getIdxByName(filename):
 		tkinter.messagebox.showerror("Invalid", "File Name Invalid: " + basename)
 		return -1
 	
-	if not ((idx >= 1 and idx <= 14) or (idx == 18)):
+	#if not ((idx >= 1 and idx <= 14) or (idx == 18)):
+	if not (idx >= 1 and idx <= 50):
 		tkinter.messagebox.showerror("Invalid", "File Index Invalid: " + basename)
 		return -1
 	
