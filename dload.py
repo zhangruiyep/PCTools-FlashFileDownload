@@ -9,14 +9,15 @@ class dload():
 	def __init__(self, dev, filename):
 		self.dev = dev
 		self.filename = filename
-		self.idxChar = self.getIdxChar()
+		self.idxStr = self.getIdxStr()
 	
-	def getIdxChar(self):
+	def getIdxStr(self):
 		idx = getIdxByName(self.filename)
-		if idx < 16:
-			c = b'%x' % idx
-		else:
-			c = b'%c' % (ord('a') + idx - 10)
+		#if idx < 16:
+		#	c = b'%x' % idx
+		#else:
+		#	c = b'%c' % (ord('a') + idx - 10)
+		c = b'%d' % idx
 		return c
 
 	def dloadRunCmd(self, cmd):
@@ -31,7 +32,7 @@ class dload():
 		
 
 	def dloadFile(self):
-		cmd = b'AT+IAPSRT=%c\r\n' % self.idxChar
+		cmd = b'AT+IAPSRT=%s\r\n' % self.idxStr
 		print(cmd)
 		ret = self.dloadRunCmd(cmd)
 		if (ret == False):
