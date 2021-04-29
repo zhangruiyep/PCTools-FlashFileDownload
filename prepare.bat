@@ -1,1 +1,1 @@
-pip.exe install pythoncrc pyserial pyinstaller
+pip.exe install pycrc pyserial pyinstaller
